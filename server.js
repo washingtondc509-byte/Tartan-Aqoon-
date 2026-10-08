@@ -37,6 +37,18 @@ io.on("connection",socket=>{
    readySeconds=Math.max(1,Math.min(60,Number(readySeconds)||5)); answerSeconds=Math.max(5,Math.min(300,Number(answerSeconds)||20));
    game.readySeconds=readySeconds; game.answerSeconds=answerSeconds; socket.emit("hostMsg",`Waqtiga waa la dejiyey: Diyaar ${readySeconds}s, Jawaab ${answerSeconds}s.`); broadcast();
  });
+ socket.on("deleteQuestion",id=>{
+  const index=questions.findIndex(q=>q.id===String(id));
+  if(index===-1){
+    return socket.emit("hostMsg","Su'aashaas lama helin.");
+  }
+
+  questions.splice(index,1);
+  save();
+
+  socket.emit("hostMsg","🗑️ Su'aasha waa la tirtiray.");
+  io.to("host").emit("questions",questions);
+});
  socket.on("hostPause",()=>{
    if(game.status!=="ready" && game.status!=="answering") return;
    game.paused=!game.paused; timerToken++;
