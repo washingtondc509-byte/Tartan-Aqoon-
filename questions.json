@@ -1,0 +1,35 @@
+[
+  {
+    "id": "default1",
+    "text": "Kee ayaa ah meeraha ugu weyn nidaamka qorraxda?",
+    "options": [
+      "Earth",
+      "Mars",
+      "Jupiter",
+      "Venus"
+    ],
+    "correct": 2
+  },
+  {
+    "id": "default2",
+    "text": "Caasimadda Soomaaliya waa?",
+    "options": [
+      "Hargeysa",
+      "Kismaayo",
+      "Muqdisho",
+      "Boosaaso"
+    ],
+    "correct": 2
+  },
+  {
+    "id": "default3",
+    "text": "Haddii aad dhaafto qofka kaalinta 2aad, kaalintaadu waa?",
+    "options": [
+      "1aad",
+      "2aad",
+      "3aad",
+      "4aad"
+    ],
+    "correct": 1
+  }
+]

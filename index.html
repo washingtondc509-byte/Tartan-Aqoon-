@@ -1,0 +1,47 @@
+<!doctype html><html lang="so"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tartan Aqoon</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#0b1220;color:#fff}.wrap{max-width:900px;margin:auto;padding:18px}.card{background:#172033;border-radius:18px;padding:20px;margin:14px 0}h1{margin:0 0 8px}button,input,select{padding:13px;border-radius:10px;border:0;font-size:16px;margin:5px}button{background:#22c55e;font-weight:bold;cursor:pointer}.alt{background:#334155;color:#fff}.danger{background:#ef4444;color:#fff}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none}.timer{text-align:center;font-size:58px;font-weight:900}.question{font-size:27px;margin:15px 0}.option{width:100%;background:#334155;color:#fff;text-align:left}.option.sel{outline:3px solid #38bdf8}.notice{color:#fde68a}.ok{color:#86efac}.bad{color:#fca5a5}.pill{background:#334155;border-radius:20px;padding:7px 12px;display:inline-block;margin:3px}.two{display:flex;gap:10px;flex-wrap:wrap}.list{max-height:300px;overflow:auto}.player{display:flex;justify-content:space-between;border-bottom:1px solid #334155;padding:9px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.question{font-size:22px}}
+</style></head><body><div class="wrap">
+<div class="card"><h1>🧠 TARTAN AQOON</h1><p>👨 Lab &nbsp; | &nbsp; 👩 Dhadig</p></div>
+<div id="home" class="card"><h2>Dooro</h2><button onclick="show('player')">Tartame</button><button class="alt" onclick="show('host')">Host / Maamule</button></div>
+
+<div id="player" class="card hidden"><h2>Ku biir Tartanka</h2><input id="pname" placeholder="Magacaaga"><select id="gender"><option>Lab</option><option>Dhadig</option></select><button onclick="joinPlayer()">Ku Biir</button><p id="pmsg"></p></div>
+
+<div id="play" class="card hidden"><div><span class="pill" id="me"></span><span class="pill" id="myscore">0 points</span></div>
+<h2 id="phase">Sug...</h2><div class="timer" id="timer">—</div><div class="question" id="pq"></div><div class="grid" id="opts"></div>
+<button id="confirm" onclick="confirmAnswer()" class="hidden">✅ CONFIRM</button><p id="lock"></p></div>
+
+<div id="host" class="card hidden"><h2>🎛️ Host / Maamule</h2>
+<button onclick="joinHost()">Fur Host Panel</button>
+<div id="hostpanel" class="hidden">
+<h3>➕ Ku dar su'aal cusub</h3><input id="qt" placeholder="Su'aasha"><input id="a0" placeholder="Jawaab A"><input id="a1" placeholder="Jawaab B"><input id="a2" placeholder="Jawaab C"><input id="a3" placeholder="Jawaab D">
+<select id="correct"><option value="0">Sax: A</option><option value="1">Sax: B</option><option value="2">Sax: C</option><option value="3">Sax: D</option></select><button onclick="addQ()">Add Su'aal</button><p id="addmsg"></p>
+<h3>Su'aalaha kaydsan</h3><div id="qlist" class="list"></div>
+<h3>⏱️ Xakamaynta waqtiga</h3><div class="two"><label>Diyaar Garow (ilbiriqsi)<br><input id="readySec" type="number" min="1" max="60" value="5"></label><label>Jawaab (ilbiriqsi)<br><input id="answerSec" type="number" min="5" max="300" value="20"></label></div><div class="two"><button onclick="setTimers()">💾 Kaydi Waqtiga</button><button onclick="startGame()">▶ START</button><button class="alt" onclick="pauseGame()">⏯️ PAUSE / SII WAD</button><button class="danger" onclick="stopGame()">⏹️ STOP</button><button class="alt" onclick="nextGame()">⏭️ Su'aasha xigta</button></div>
+<h3>Live Leaderboard</h3><div id="players"></div><p id="hmsg"></p></div></div>
+</div>
+<script src="/socket.io/socket.io.js"></script><script>
+const s=io();let selected=null,lastState=null;
+function show(x){document.getElementById("home").classList.add("hidden");document.getElementById(x).classList.remove("hidden")}
+function joinPlayer(){let name=document.getElementById("pname").value||"Marti";s.emit("join",{name,gender:document.getElementById("gender").value,role:"player"});document.getElementById("player").classList.add("hidden");document.getElementById("play").classList.remove("hidden");}
+function joinHost(){s.emit("join",{role:"host"});document.getElementById("hostpanel").classList.remove("hidden");}
+function addQ(){let q={text:qt.value,options:[a0.value,a1.value,a2.value,a3.value],correct:+correct.value};s.emit("addQuestion",q)}
+function startGame(){s.emit("hostStart")}function nextGame(){s.emit("hostNext")}function setTimers(){s.emit("hostSetTimers",{readySeconds:+document.getElementById("readySec").value,answerSeconds:+document.getElementById("answerSec").value})}function pauseGame(){s.emit("hostPause")}function stopGame(){s.emit("hostStop")}
+function confirmAnswer(){if(selected!==null){s.emit("answer",selected);document.getElementById("confirm").disabled=true;document.getElementById("lock").textContent="🔒 Jawaabta waa la xiray."}}
+function renderState(st){lastState=st;let now=Date.now();let sec=st.status==="ready"?Math.max(0,Math.ceil((st.readyUntil-now)/1000)):st.status==="answering"?Math.max(0,Math.ceil((st.answerUntil-now)/1000)):0;
+if(document.getElementById("play").classList.contains("hidden"))return;document.getElementById("timer").textContent=sec||"—";
+let phase=document.getElementById("phase"),q=document.getElementById("pq"),opts=document.getElementById("opts"),conf=document.getElementById("confirm");
+if(st.status==="ready"){phase.textContent=st.paused?"⏸️ WAA LA JOOJIYEY":"🟡 DIYAAR GAROW";q.textContent="Su'aasha soo socota ayaa bilaabanaysa...";opts.innerHTML="";conf.classList.add("hidden")}
+else if(st.status==="answering"){phase.textContent=st.paused?"⏸️ WAA LA JOOJIYEY":"🟢 KA JAWAAB — "+st.answerSeconds+" ILBIRIQSI";let qi=st.questionIndex; if(window.currentQ!==qi){window.currentQ=qi;selected=null;conf.disabled=false;conf.classList.remove("hidden");q.textContent="Su'aasha "+(qi+1);opts.innerHTML="";fetch("/question/"+qi).then(r=>r.json()).then(x=>{q.textContent=x.text;x.options.forEach((v,k)=>{let b=document.createElement("button");b.className="option";b.textContent=String.fromCharCode(65+k)+". "+v;b.onclick=()=>{selected=k;[...opts.children].forEach(z=>z.classList.remove("sel"));b.classList.add("sel")};opts.appendChild(b)})})}}
+else if(st.status==="results"){phase.textContent="📊 NATIIJADA";conf.classList.add("hidden")}
+else if(st.status==="finished"){phase.textContent="🏆 TARTANKU WUU DHAMAADAY";q.textContent="Sug natiijada";opts.innerHTML="";conf.classList.add("hidden")}
+}
+s.on("state",renderState);s.on("answerLocked",()=>document.getElementById("lock").textContent="🔒 Jawaabta waa la xiray.");
+s.on("addResult",x=>document.getElementById("addmsg").textContent=x.msg);
+s.on("questions",qs=>document.getElementById("qlist").innerHTML=qs.map((q,i)=>"<div class='player'><span>"+(i+1)+". "+q.text+"</span><span>✓ "+String.fromCharCode(65+q.correct)+"</span></div>").join(""));
+s.on("hostState",x=>{document.getElementById("hostpanel").classList.remove("hidden");document.getElementById("qlist").innerHTML=x.questions.map((q,i)=>"<div class='player'><span>"+(i+1)+". "+q.text+"</span><span>✓ "+String.fromCharCode(65+q.correct)+"</span></div>").join("");renderPlayers(x.players)});
+s.on("hostMsg",x=>document.getElementById("hmsg").textContent=x);
+function renderPlayers(ps){document.getElementById("players").innerHTML=ps.sort((a,b)=>b.score-a.score).map((p,i)=>"<div class='player'><span>"+(i+1)+". "+p.name+" <small>("+p.gender+")</small></span><b>"+p.score+" pts</b></div>").join("")}
+setInterval(()=>{if(lastState)renderState(lastState)},250);
+</script></body></html>
